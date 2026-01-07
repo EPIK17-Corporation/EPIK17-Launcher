@@ -13,6 +13,11 @@ use chrono::Utc;
 use ctrlc;
 use winapi::um::wincon::GetConsoleWindow;
 use winapi::um::winuser::ShowWindow;
+use crossterm::{
+    execute,
+    terminal::{SetSize},
+};
+use std::io::{stdout, Result};
 
 // i'll try to add a anti-cheat later
 // anways, heres my TODO list:
@@ -27,7 +32,7 @@ use winapi::um::winuser::ShowWindow;
 // [ ] GUI launcher
 // Maybe a Linux version in the future?
 
-const VERSION: &str = "1.0.9"; // i sometime forget to update this lmao
+const VERSION: &str = "1.1.1"; // i sometime forget to update this lmao
 const EPIKVERSION: &str = "https://www.epik17.xyz/version";
 const CZIPURL: &str = "https://www.epik17.xyz/EPIKPlayerBeta.zip";
 const SZIPURL: &str = "https://www.epik17.xyz/EPIKStudioBeta.zip";
@@ -157,6 +162,19 @@ fn updatechecker() {
         unzip(&zp, &sdir());
     }
 
+    //also, download the launcher and launch it if a new version is available
+    let lp = lpath();
+    let need_launcher = get(&cachelol(EPIKVERSION))
+        .ok()
+        .and_then(|r| r.text().ok())
+        .map_or(true, |v| v.trim() != VERSION || !lp.exists());
+
+    if need_launcher {
+        filesdownloader(&cachelol(EPIKLAUNCHER), &lp);
+        Command::new(&lp).spawn().unwrap();
+        std::process::exit(0);
+    }
+
     // discord rich presence client
     // let dp = dsc_path();
     // if !dp.exists() {
@@ -222,6 +240,11 @@ fn gamelmao() {
 }
 
 fn main() {
+    execute!(stdout(), SetSize(55, 15)).unwrap();
+    println!("EPIK17 Launcher v{}", VERSION);
+    println!("========================");
+    println!("Do we really need an output here?");
+
     fs::create_dir_all(appdata()).unwrap();
     fs::create_dir_all(cdir()).unwrap();
 
